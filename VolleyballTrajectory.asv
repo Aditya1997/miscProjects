@@ -1,9 +1,5 @@
 clear all, clc
 
-% Articles
-% https://thesportjournal.org/article/normative-profiles-for-serve-speed-for-the-training-of-the-serve-and-reception-in-volleyball/
-% https://www.mdpi.com/2076-3417/9/19/4007
-
 %% Arrays and Variables
 
 x = zeros(1000,1);
@@ -73,7 +69,7 @@ for i = 2:timesteps
     radius = .105;
     A = pi*radius^2;
     rho = 1.293; % density of air
-    Cd = .3; % Ranges from .45 for v=10 to .2 for v >= 18
+    Cd = .35; % Ranges from .45 for v=10 to .2 for v >= 18
     m = .28; % mass in kg
     % Drag force calculation
     if Vy(i-1) > 0
@@ -84,11 +80,11 @@ for i = 2:timesteps
             Dy = 9.81*m;
         end
     end
-    Dx = -Cd*rho*((Vxdrag(i-1))^2)*A/2;
+    Dx = Cd*rho*((Vxdrag(i-1))^2)*A/2;
 
     % Calculating velocity and position with drag
-    Vxdrag(i) = Vxdrag(i-1) + (Dx/m)*timestepsize;
-    Vydrag(i) = Vydrag(i-1) + (-9.81+Dy/m)*timestepsize;
+    Vxdrag(i) = Vxdrag(i-1) - (Dx/m)*timestepsize;
+    Vydrag(i) = Vydrag(i-1) - (9.81+Dy/m)*timestepsize;
     xdrag(i) = xdrag(i-1) + Vxdrag(i)*timestepsize;
     ydrag(i) = ydrag(i-1) + Vydrag(i)*timestepsize;
 
@@ -98,8 +94,8 @@ for i = 2:timesteps
     S = radius*omega/velapprox;
     %disp(S);
     CL = .1; % Lift coefficient for Magnus, approx based on S
-    Vdragmagnustotal = sqrt((Vydragmagnus(i-1)^2)+(Vxdragmagnus(i-1)^2)); % magnitude of ball velocity
-    Vdragmagnusangle = atan((Vydragmagnus(i-1))/(Vxdragmagnus(i-1))); % angle of ball vel traj
+    Vdragmagnustotal = sqrt((Vydragmagnus(i-1)^2)+(Vxdragmagnus(i-1)^2));
+    Vdragmagnusangle = atan((Vydragmagnus(i-1))/(Vxdragmagnus(i-1)));
     disp(rad2deg(Vdragmagnusangle));
     % FMagnus = .5*Cl*rho*A*v^2
     FMagnus = .5*CL*rho*A*(Vdragmagnustotal)^2;
@@ -107,22 +103,19 @@ for i = 2:timesteps
         FMagnusx = FMagnus*sin(Vdragmagnusangle);
         FMagnusy = FMagnus*-cos(Vdragmagnusangle);
     else
-        FMagnusx = FMagnus*-sin(Vdragmagnusangle);
+        FMagnusx = FMagnus*-sin(Vdragmagnusangle); % ++, --, +-, +-
         FMagnusy = FMagnus*-cos(Vdragmagnusangle);
     end
-    %disp(FMagnusx);
-    %disp(FMagnusy);
-    DMx = Dx + FMagnusx; % Drag force + Magnus force
-    DMy = Dy + FMagnusy; % Drag force + Magnus force
-    disp('DMx');
-    disp('DMx');
-    disp(Dx);
     disp(FMagnusx);
-    %disp(Dy);
-    %disp(FMagnusy/m);
+    disp(FMagnusy);
+    DMx = Dx + FMagnusx/m; % Drag acc + Magnus acc
+    DMy = Dy + FMagnusy/m; % Drag acc + Magnus acc
+    disp('DMy');
+    disp(Dy);
+    disp(FMagnusy/m);
     % Calculating velocity and position with drag + Magnus force
-    Vxdragmagnus(i) = Vxdragmagnus(i-1) + (DMx/m)*timestepsize;
-    Vydragmagnus(i) = Vydragmagnus(i-1) + (-9.81+DMy/m)*timestepsize;
+    Vxdragmagnus(i) = Vxdragmagnus(i-1) - (DMx/m)*timestepsize;
+    Vydragmagnus(i) = Vydragmagnus(i-1) - (9.81+DMy/m)*timestepsize;
     xdragmagnus(i) = xdragmagnus(i-1) + Vxdragmagnus(i)*timestepsize;
     ydragmagnus(i) = ydragmagnus(i-1) + Vydragmagnus(i)*timestepsize;
 
