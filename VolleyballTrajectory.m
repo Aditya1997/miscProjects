@@ -3,6 +3,9 @@ clear all, clc
 % Articles
 % https://thesportjournal.org/article/normative-profiles-for-serve-speed-for-the-training-of-the-serve-and-reception-in-volleyball/
 % https://www.mdpi.com/2076-3417/9/19/4007
+% https://www.mdpi.com/2073-4441/14/17/2593 - Drag/lift spinning sphere
+% https://www.engineersedge.com/calculators/magnus_effect_calculator_15766.htm
+% Note, Reynolds Re ranges from 2e5 (v = 10 m/s) to 6e5 (v = 28 m/s)
 
 %% Arrays and Variables
 
@@ -104,9 +107,9 @@ for i = 2:timesteps
     omega = 30; % radians per s
     S = radius*omega/velapprox;
     disp(S);
-    CL = 0; % Float serve, no spin
+    %CL = 0; % Float serve, no spin
     %CL = .1; % Lift coefficient for Magnus, approx based on S
-    %CL = .2; % Lift coefficient for Magnus, approx based on S
+    CL = .2; % Lift coefficient for Magnus, approx based on S
     Vdragmagnustotal = sqrt((Vydragmagnus(i-1)^2)+(Vxdragmagnus(i-1)^2)); % magnitude of ball velocity
     Vdragmagnusangle = atan((Vydragmagnus(i-1))/(Vxdragmagnus(i-1))); % angle of ball vel traj
     disp(rad2deg(Vdragmagnusangle));
@@ -119,16 +122,10 @@ for i = 2:timesteps
         FMagnusx = FMagnus*-sin(Vdragmagnusangle);
         FMagnusy = FMagnus*-cos(Vdragmagnusangle);
     end
-    %disp(FMagnusx);
-    %disp(FMagnusy);
+    disp(FMagnusx);
+    disp(FMagnusy);
     DMx = Dx + FMagnusx; % Drag force + Magnus force
     DMy = Dy + FMagnusy; % Drag force + Magnus force
-    disp('DMx');
-    disp('DMx');
-    disp(Dx);
-    disp(FMagnusx);
-    %disp(Dy);
-    %disp(FMagnusy/m);
     % Calculating velocity and position with drag + Magnus force
     Vxdragmagnus(i) = Vxdragmagnus(i-1) + (DMx/m)*timestepsize;
     Vydragmagnus(i) = Vydragmagnus(i-1) + (-9.81+DMy/m)*timestepsize;
