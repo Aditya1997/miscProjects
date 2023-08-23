@@ -1,11 +1,17 @@
 clear all, clc
 
-% Articles
+% Articles/Sources
+% Forces impacting ball trajectory, drag, magnus, etc.
+% http://www.physics.usyd.edu.au/~cross/TRAJECTORIES/42.%20Ball%20Trajectories.pdf
+% https://www.mdpi.com/2073-4441/14/17/2593 - Drag/lift spinning sphere
+
+% Magnus calculator
+% https://www.engineersedge.com/calculators/magnus_effect_calculator_15766.htm
+% Note, Reynolds number Re ranges from 2e5 (v = 10 m/s) to 6e5 (v = 28 m/s)
+
+% Volleyball specific articles
 % https://thesportjournal.org/article/normative-profiles-for-serve-speed-for-the-training-of-the-serve-and-reception-in-volleyball/
 % https://www.mdpi.com/2076-3417/9/19/4007
-% https://www.mdpi.com/2073-4441/14/17/2593 - Drag/lift spinning sphere
-% https://www.engineersedge.com/calculators/magnus_effect_calculator_15766.htm
-% Note, Reynolds Re ranges from 2e5 (v = 10 m/s) to 6e5 (v = 28 m/s)
 
 %% Arrays and Variables
 
@@ -31,17 +37,11 @@ ydfinished = 0;
 ydmfinished = 0;
 
 % Serve variables
-angledeg = 10; % angle in degrees
+angledeg = 15; % angle in degrees, 27
 angle = angledeg*pi/180; % angle for calcs
-Vi = 17; % velocity in meters/s
+Vi = 20; % velocity in meters/s, 13
 x(1) = -.5;
 y(1) = 2.70;
-
-% angledeg = 10; % angle in degrees
-% angle = angledeg*pi/180; % angle for calcs
-% Vi = 22; % velocity in meters/s
-% x(1) = -.5;
-% y(1) = 2.70;
 
 % Ball starts
 ydrag(1) = y(1);
@@ -78,16 +78,15 @@ timesteps = 500;
 for i = 2:timesteps
     timestepsize = 3/timesteps;
     t = i*timestepsize;
-    % Drag variables, https://www.mdpi.com/2076-3417/9/19/4007
+    % Drag variables
     radius = .105;
     A = pi*radius^2;
-    rho = 1.293; % density of air
-    %Cd = .3; % Ranges from ~.45 for v=10 to .2 for v >= 18
-    Cd = .2; % Ranges from ~.45 for v=10 to .2 for v >= 18
-    m = .28; % mass in kg
-    % Drag force calculation
+    rho = 1.293;
+    Cd = .5;
+    m = .27;
+    % Drag acceleration effects
     if Vy(i-1) > 0
-        Dy = -Cd*rho*((Vydrag(i-1))^2)*A/2;
+        Dy = -Cd*rho*((Vydrag(i-1))^2)*A/2; % Drag is assumed +
     else
         Dy = Cd*rho*((Vydrag(i-1))^2)*A/2;
         if Dy > 9.81*m
@@ -106,26 +105,27 @@ for i = 2:timesteps
     velapprox = Vi;
     omega = 30; % radians per s
     S = radius*omega/velapprox;
-    disp(S);
-    %CL = 0; % Float serve, no spin
-    %CL = .1; % Lift coefficient for Magnus, approx based on S
-    CL = .2; % Lift coefficient for Magnus, approx based on S
-    Vdragmagnustotal = sqrt((Vydragmagnus(i-1)^2)+(Vxdragmagnus(i-1)^2)); % magnitude of ball velocity
-    Vdragmagnusangle = atan((Vydragmagnus(i-1))/(Vxdragmagnus(i-1))); % angle of ball vel traj
-    disp(rad2deg(Vdragmagnusangle));
+    %disp(S);
+    CL = .05; % Lift coefficient for Magnus, approx based on S
+    Vdragmagnustotal = sqrt((Vydragmagnus(i-1)^2)+(Vxdragmagnus(i-1)^2));
+    Vdragmagnusangle = atan((Vydragmagnus(i-1))/(Vxdragmagnus(i-1)));
+    %disp(rad2deg(Vdragmagnusangle));
     % FMagnus = .5*Cl*rho*A*v^2
     FMagnus = .5*CL*rho*A*(Vdragmagnustotal)^2;
     if Vdragmagnusangle > 0
         FMagnusx = FMagnus*sin(Vdragmagnusangle);
-        FMagnusy = FMagnus*-cos(Vdragmagnusangle);
+        FMagnusy = -FMagnus*cos(Vdragmagnusangle);
     else
-        FMagnusx = FMagnus*-sin(Vdragmagnusangle);
-        FMagnusy = FMagnus*-cos(Vdragmagnusangle);
+        FMagnusx = -FMagnus*sin(Vdragmagnusangle);
+        FMagnusy = -FMagnus*cos(Vdragmagnusangle);
     end
-    disp(FMagnusx);
-    disp(FMagnusy);
-    DMx = Dx + FMagnusx; % Drag force + Magnus force
-    DMy = Dy + FMagnusy; % Drag force + Magnus force
+    %disp(FMagnusx);
+    %disp(FMagnusy);
+    DMx = Dx + FMagnusx/m; % Drag acc + Magnus acc
+    DMy = Dy + FMagnusy/m; % Drag acc + Magnus acc
+    disp(DMx);
+    disp(DMy);
+
     % Calculating velocity and position with drag + Magnus force
     Vxdragmagnus(i) = Vxdragmagnus(i-1) + (DMx/m)*timestepsize;
     Vydragmagnus(i) = Vydragmagnus(i-1) + (-9.81+DMy/m)*timestepsize;
@@ -136,8 +136,8 @@ for i = 2:timesteps
     Dx = 0;
     Dy = 0;
     % m = 1;
-    Vx(i) = Vx(1) + (Dx/m)*t;
-    Vy(i) = Vy(1) + (-9.81+Dy/m)*t;
+    Vx(i) = Vx(1) - (Dx/m)*t;
+    Vy(i) = Vy(1) - (9.81+Dy/m)*t;
     x(i) = x(1) + Vix*t + .5*(Dx/m)*t^2;
     y(i) = y(1) + Viy*t + .5*(-9.81+Dy/m)*(t^2);
 end
